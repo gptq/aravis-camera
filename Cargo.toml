@@ -1,0 +1,21 @@
+[package]
+name = "aravis-camera"
+version = "0.1.0"
+edition = "2021"
+description = "GigE Vision industrial camera library based on Aravis, compatible with HikRobot cameras"
+license = "MIT"
+authors = ["aigc8 <starofazeroth@gmail.com>"]
+repository = "https://github.com/gptq/aravis-camera"
+homepage = "https://github.com/gptq/aravis-camera"
+readme = "README.md"
+keywords = ["gige-vision", "aravis", "industrial-camera", "machine-vision", "genicam"]
+categories = ["multimedia::video", "hardware-support"]
+
+[dependencies]
+aravis = "0.11"
+thiserror = "2"
+log = "0.4"
+opencv = { version = "0.93", features = ["imgproc"] }
+
+[dev-dependencies]
+env_logger = "0.11"
