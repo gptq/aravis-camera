@@ -15,7 +15,7 @@ categories = ["multimedia::video", "hardware-support"]
 aravis = "0.11"
 thiserror = "2"
 log = "0.4"
-opencv = { version = "0.93", features = ["imgproc"] }
+opencv = { version = "0.98", features = ["imgproc"] }
 
 [dev-dependencies]
 env_logger = "0.11"
