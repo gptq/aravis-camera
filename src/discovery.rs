@@ -105,7 +105,10 @@ pub fn force_ip(device_id: &str, ip: &str, subnet: &str, gateway: &str) -> Resul
 
     log::info!(
         "force IP set: device={}, ip={}, subnet={}, gateway={}",
-        device_id, ip, subnet, gateway
+        device_id,
+        ip,
+        subnet,
+        gateway
     );
     Ok(())
 }

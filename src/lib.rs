@@ -81,8 +81,8 @@ pub mod multi_camera;
 pub use camera::{CameraGuard, CameraStats, GigECamera};
 pub use demosaic::BayerPattern;
 pub use discovery::{
-    discover_cameras, force_ip, get_all_camera_ids, get_host_ip_by_target_ip,
-    ip_str_to_u32, u32_to_ip_str, CameraInfo,
+    discover_cameras, force_ip, get_all_camera_ids, get_host_ip_by_target_ip, ip_str_to_u32,
+    u32_to_ip_str, CameraInfo,
 };
 pub use error::{CameraError, Result};
 pub use frame::Frame;

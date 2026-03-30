@@ -253,8 +253,7 @@ impl GigECamera {
                     // 更新失败统计
                     self.lock_stats().failed_frames += 1;
 
-                    let delay_ms =
-                        self.retry_delay_base_ms * (1u64 << attempt.min(6));
+                    let delay_ms = self.retry_delay_base_ms * (1u64 << attempt.min(6));
                     log::warn!(
                         "get_frame failed (attempt {}/{}): {}, retrying in {}ms...",
                         attempt + 1,
@@ -314,10 +313,7 @@ impl GigECamera {
 
         for attempt in 1..=self.max_retries * 2 {
             std::thread::sleep(Duration::from_secs(2));
-            log::info!(
-                "waiting for camera to restart... (attempt {})",
-                attempt
-            );
+            log::info!("waiting for camera to restart... (attempt {})", attempt);
 
             match aravis::Camera::new(device_id) {
                 Ok(new_camera) => {
@@ -328,11 +324,7 @@ impl GigECamera {
                     break;
                 }
                 Err(e) => {
-                    log::debug!(
-                        "camera not yet ready (attempt {}): {}",
-                        attempt,
-                        e
-                    );
+                    log::debug!("camera not yet ready (attempt {}): {}", attempt, e);
                 }
             }
         }
@@ -358,9 +350,8 @@ impl GigECamera {
         self.lock_stats().total_reconnects += 1;
 
         let device_id = self.device_id.as_deref();
-        let new_camera = aravis::Camera::new(device_id).map_err(|e| {
-            CameraError::ConnectionLost(format!("reconnect failed: {e}"))
-        })?;
+        let new_camera = aravis::Camera::new(device_id)
+            .map_err(|e| CameraError::ConnectionLost(format!("reconnect failed: {e}")))?;
 
         *self.lock_camera() = new_camera;
         self.open()?;
@@ -411,7 +402,9 @@ impl GigECamera {
         if (clamped - us).abs() > f64::EPSILON {
             log::warn!(
                 "exposure time {:.1} us clamped to [{:.1}, {:.1}]",
-                us, min, max
+                us,
+                min,
+                max
             );
         }
 
@@ -467,10 +460,7 @@ impl GigECamera {
         let (min, max) = cam.gain_bounds()?;
         let clamped = gain.clamp(min, max);
         if (clamped - gain).abs() > f64::EPSILON {
-            log::warn!(
-                "gain {} clamped to [{}, {}]",
-                gain, min, max
-            );
+            log::warn!("gain {} clamped to [{}, {}]", gain, min, max);
         }
 
         cam.set_gain(clamped)?;
@@ -618,9 +608,7 @@ impl GigECamera {
     /// 返回错误而非 panic。
     pub fn gv_auto_packet_size(&self) -> Result<()> {
         let cam = self.lock_camera();
-        match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            cam.gv_auto_packet_size()
-        })) {
+        match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| cam.gv_auto_packet_size())) {
             Ok(Ok(())) => {
                 log::debug!("GigE auto packet size negotiated");
                 Ok(())
@@ -660,9 +648,7 @@ impl GigECamera {
     /// 获取当前 GigE 包延时。
     pub fn gv_packet_delay(&self) -> Result<i64> {
         let cam = self.lock_camera();
-        match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            cam.gv_get_packet_delay()
-        })) {
+        match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| cam.gv_get_packet_delay())) {
             Ok(Ok(v)) => Ok(v),
             Ok(Err(e)) => Err(CameraError::Aravis(e)),
             Err(_) => {
@@ -697,9 +683,7 @@ impl GigECamera {
     /// 获取当前 GigE 包大小。
     pub fn gv_packet_size(&self) -> Result<u32> {
         let cam = self.lock_camera();
-        match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            cam.gv_get_packet_size()
-        })) {
+        match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| cam.gv_get_packet_size())) {
             Ok(Ok(v)) => Ok(v),
             Ok(Err(e)) => Err(CameraError::Aravis(e)),
             Err(_) => {
@@ -935,9 +919,9 @@ impl GigECamera {
         log::info!("stream: payload size = {} bytes", payload);
 
         // 创建 Stream
-        let stream = cam.create_stream().map_err(|e| {
-            CameraError::AravisError(format!("create_stream failed: {e}"))
-        })?;
+        let stream = cam
+            .create_stream()
+            .map_err(|e| CameraError::AravisError(format!("create_stream failed: {e}")))?;
 
         // 预分配 Buffer 并推入 Stream
         for _ in 0..n_buffers {
@@ -979,18 +963,19 @@ impl GigECamera {
         };
 
         // 从 Stream 获取 Buffer（带超时）
-        let buffer = stream.timeout_pop_buffer(self.timeout_us).ok_or_else(|| {
-            CameraError::AcquisitionTimeout(self.timeout_us / 1_000_000)
-        })?;
+        let buffer = stream
+            .timeout_pop_buffer(self.timeout_us)
+            .ok_or_else(|| CameraError::AcquisitionTimeout(self.timeout_us / 1_000_000))?;
 
         // 检查 buffer 状态 (避免访问损坏/不完整帧触发 C assertion)
         let status = buffer.status();
         if status != aravis::BufferStatus::Success {
             // 回收损坏的 buffer
             stream.push_buffer(buffer);
-            return Err(CameraError::AravisError(
-                format!("buffer status: {:?} (packet loss or incomplete)", status)
-            ));
+            return Err(CameraError::AravisError(format!(
+                "buffer status: {:?} (packet loss or incomplete)",
+                status
+            )));
         }
 
         // 构建 Frame

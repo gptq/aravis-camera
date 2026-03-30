@@ -135,11 +135,14 @@ impl Frame {
             return match self.bits_per_pixel {
                 8 => demosaic::demosaic_8bit(&self.data, w, h, self.stride, pattern),
                 10 | 12 => demosaic::demosaic_16bit_to_8bit(
-                    &self.data, w, h, self.stride, pattern, self.bits_per_pixel,
+                    &self.data,
+                    w,
+                    h,
+                    self.stride,
+                    pattern,
+                    self.bits_per_pixel,
                 ),
-                16 => demosaic::demosaic_16bit_to_8bit(
-                    &self.data, w, h, self.stride, pattern, 16,
-                ),
+                16 => demosaic::demosaic_16bit_to_8bit(&self.data, w, h, self.stride, pattern, 16),
                 _ => Err(CameraError::GenericError(format!(
                     "不支持 {}bpp 的 Bayer 去马赛克",
                     self.bits_per_pixel
@@ -249,10 +252,7 @@ mod tests {
             bits_per_pixel: 8,
             stride: 4,
             data: vec![
-                50, 200, 55, 210,
-                30, 100, 35, 110,
-                60, 190, 65, 195,
-                25, 105, 28, 108,
+                50, 200, 55, 210, 30, 100, 35, 110, 60, 190, 65, 195, 25, 105, 28, 108,
             ],
             timestamp_ns: 0,
             system_timestamp_ns: 0,

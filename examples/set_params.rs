@@ -131,7 +131,10 @@ fn main() -> aravis_camera::Result<()> {
         let frame = guard.get_frame()?;
 
         let (h, w, c) = frame.shape();
-        println!("  采集到帧: {}x{}, {} 通道, {} bpp", w, h, c, frame.bits_per_pixel);
+        println!(
+            "  采集到帧: {}x{}, {} 通道, {} bpp",
+            w, h, c, frame.bits_per_pixel
+        );
         println!("  数据大小: {} 字节", frame.data_size());
         println!("  像素格式: {}", frame.pixel_format);
 

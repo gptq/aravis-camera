@@ -63,7 +63,10 @@ fn main() -> aravis_camera::Result<()> {
     let frame = guard.get_frame()?;
 
     let (h, w, c) = frame.shape();
-    println!("  Frame: {}x{} ({} channels, {} bpp)", w, h, c, frame.bits_per_pixel);
+    println!(
+        "  Frame: {}x{} ({} channels, {} bpp)",
+        w, h, c, frame.bits_per_pixel
+    );
     println!("  Data size: {} bytes", frame.data_size());
     println!("  Pixel format: {}", frame.pixel_format);
 

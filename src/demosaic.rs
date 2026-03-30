@@ -106,7 +106,11 @@ pub fn demosaic_8bit(
     if raw.len() < required {
         return Err(CameraError::GenericError(format!(
             "demosaic: data too short, need {} bytes ({}x{}, stride={}), got {}",
-            required, w, h, s, raw.len()
+            required,
+            w,
+            h,
+            s,
+            raw.len()
         )));
     }
 
@@ -140,7 +144,8 @@ pub fn demosaic_8bit(
         .map_err(|e| CameraError::GenericError(format!("OpenCV cvtColor failed: {}", e)))?;
 
     // 提取 RGB 数据
-    let rgb_data = rgb_mat.data_bytes()
+    let rgb_data = rgb_mat
+        .data_bytes()
         .map_err(|e| CameraError::GenericError(format!("Failed to get RGB data: {}", e)))?;
 
     Ok(rgb_data.to_vec())
@@ -170,7 +175,11 @@ pub fn demosaic_16bit_to_8bit(
         stride as usize
     };
 
-    let required = if h > 0 { (h - 1) * s + w * bytes_per_pixel } else { 0 };
+    let required = if h > 0 {
+        (h - 1) * s + w * bytes_per_pixel
+    } else {
+        0
+    };
     if raw.len() < required {
         return Err(CameraError::GenericError(format!(
             "demosaic_16bit: data too short, need {} bytes, got {}",
@@ -208,7 +217,10 @@ mod tests {
         assert_eq!(BayerPattern::detect("BayerGB8"), Some(BayerPattern::Gbrg));
         assert_eq!(BayerPattern::detect("BayerBG8"), Some(BayerPattern::Bggr));
         assert_eq!(BayerPattern::detect("BayerRG12"), Some(BayerPattern::Rggb));
-        assert_eq!(BayerPattern::detect("BayerGR10Packed"), Some(BayerPattern::Grbg));
+        assert_eq!(
+            BayerPattern::detect("BayerGR10Packed"),
+            Some(BayerPattern::Grbg)
+        );
         assert_eq!(BayerPattern::detect("Mono8"), None);
         assert_eq!(BayerPattern::detect("RGB8"), None);
     }
@@ -217,17 +229,17 @@ mod tests {
     fn test_demosaic_basic() {
         // 4×4 GRBG pattern (typical for MV-CU050-30GC with BayerGR8)
         let raw: Vec<u8> = vec![
-            50, 200, 55, 210,   // row 0: G R G R
-            30, 100, 35, 110,   // row 1: B G B G
-            60, 190, 65, 195,   // row 2: G R G R
-            25, 105, 28, 108,   // row 3: B G B G
+            50, 200, 55, 210, // row 0: G R G R
+            30, 100, 35, 110, // row 1: B G B G
+            60, 190, 65, 195, // row 2: G R G R
+            25, 105, 28, 108, // row 3: B G B G
         ];
         let rgb = demosaic_8bit(&raw, 4, 4, 0, BayerPattern::Grbg).unwrap();
         assert_eq!(rgb.len(), 4 * 4 * 3);
 
         // 中心像素 (1,1) 的 G 通道应接近原始值 100
-        let idx = (1 * 4 + 1) * 3;
-        assert!(rgb[idx] > 0);     // R > 0
+        let idx = (4 + 1) * 3;
+        assert!(rgb[idx] > 0); // R > 0
         assert!(rgb[idx + 1] > 0); // G > 0
         assert!(rgb[idx + 2] > 0); // B > 0
     }
@@ -235,10 +247,7 @@ mod tests {
     #[test]
     fn test_demosaic_with_stride() {
         // 2×2 image with stride=4 (2 padding bytes per row)
-        let raw = vec![
-            200, 100, 0, 0,
-            120, 50, 0, 0,
-        ];
+        let raw = vec![200, 100, 0, 0, 120, 50, 0, 0];
         let rgb = demosaic_8bit(&raw, 2, 2, 4, BayerPattern::Rggb).unwrap();
         assert_eq!(rgb.len(), 2 * 2 * 3);
     }
