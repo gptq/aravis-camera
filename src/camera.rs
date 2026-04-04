@@ -284,6 +284,58 @@ impl GigECamera {
         Err(CameraError::ReconnectFailed(self.max_retries))
     }
 
+    /// 在已打开的 Stream 上执行一次软触发并等待对应帧返回。
+    ///
+    /// 适合工业现场的 software trigger 模式：
+    /// Stream 在启动阶段保持打开，触发时仅发送一次 software_trigger，
+    /// 随后从现有 Stream 弹出一帧，避免一站式 acquisition() 在某些相机上的
+    /// 超长首帧延迟和 ROI 失配问题。
+    pub fn trigger_stream_frame(&self) -> Result<Frame> {
+        self.ensure_open()?;
+        if !self.is_streaming() {
+            return Err(CameraError::DeviceNotOpen);
+        }
+
+        self.software_trigger()?;
+        self.stream_pop_frame()
+    }
+
+    /// 带自动重试的 software trigger + Stream pop。
+    ///
+    /// 每次重试都会重新发送 software trigger，而不是复用上一次触发，
+    /// 这样在超时或不完整帧后，下一次尝试仍然对应新的曝光周期。
+    pub fn robust_trigger_stream_frame(&self) -> Result<Frame> {
+        for attempt in 0..=self.max_retries {
+            match self.trigger_stream_frame() {
+                Ok(frame) => return Ok(frame),
+                Err(e) if attempt < self.max_retries => {
+                    self.lock_stats().failed_frames += 1;
+
+                    let delay_ms = self.retry_delay_base_ms * (1u64 << attempt.min(6));
+                    log::warn!(
+                        "trigger_stream_frame failed (attempt {}/{}): {}, retrying in {}ms...",
+                        attempt + 1,
+                        self.max_retries,
+                        e,
+                        delay_ms
+                    );
+                    std::thread::sleep(Duration::from_millis(delay_ms));
+                }
+                Err(e) => {
+                    self.lock_stats().failed_frames += 1;
+                    log::error!(
+                        "trigger_stream_frame failed after {} attempts: {}",
+                        self.max_retries + 1,
+                        e
+                    );
+                    return Err(e);
+                }
+            }
+        }
+
+        Err(CameraError::ReconnectFailed(self.max_retries))
+    }
+
     /// 重置相机设备。
     ///
     /// 1. 停止采集
