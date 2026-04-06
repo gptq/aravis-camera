@@ -33,7 +33,7 @@ pub struct CameraInfo {
 /// }
 /// ```
 pub fn discover_cameras() -> Result<Vec<CameraInfo>> {
-    let aravis = crate::camera::ensure_aravis_initialized();
+    let aravis = crate::camera::ensure_aravis_initialized()?;
 
     let devices = aravis.get_device_list();
     if devices.is_empty() {
@@ -87,7 +87,7 @@ pub fn get_host_ip_by_target_ip(target_ip: &str) -> Result<String> {
 pub fn force_ip(device_id: &str, ip: &str, subnet: &str, gateway: &str) -> Result<()> {
     use aravis::prelude::*;
 
-    crate::camera::ensure_aravis_initialized();
+    crate::camera::ensure_aravis_initialized()?;
 
     let camera = aravis::Camera::new(Some(device_id))?;
     let device = camera.device().ok_or(CameraError::DeviceNotOpen)?;

@@ -24,24 +24,22 @@ use crate::error::{CameraError, Result};
 use crate::frame::Frame;
 
 /// Aravis 全局单例。只初始化一次，handle 持久存储。
-static ARAVIS_HANDLE: OnceLock<aravis::Aravis> = OnceLock::new();
+static ARAVIS_HANDLE: OnceLock<std::result::Result<aravis::Aravis, String>> = OnceLock::new();
 
 /// 确保 Aravis 库已初始化（线程安全，只执行一次）。
 ///
 /// 返回对全局 `Aravis` handle 的引用，用于 `get_device_list()` 等需要 handle 的操作。
-pub(crate) fn ensure_aravis_initialized() -> &'static aravis::Aravis {
-    ARAVIS_HANDLE.get_or_init(|| {
-        match aravis::Aravis::initialize() {
-            Ok(aravis) => {
-                log::info!("Aravis library initialized");
-                aravis
-            }
-            Err(e) => {
-                // 理论上不应该发生，因为 OnceLock 保证只调用一次
-                panic!("Aravis initialization failed unexpectedly: {e}");
-            }
+pub(crate) fn ensure_aravis_initialized() -> Result<&'static aravis::Aravis> {
+    let init_result = ARAVIS_HANDLE.get_or_init(|| match aravis::Aravis::initialize() {
+        Ok(aravis) => {
+            log::info!("Aravis library initialized");
+            Ok(aravis)
         }
-    })
+        Err(error) => Err(error.to_string()),
+    });
+    init_result
+        .as_ref()
+        .map_err(|message| CameraError::GenericError(format!("Aravis initialization failed: {message}")))
 }
 
 /// 相机运行统计信息。
@@ -104,7 +102,7 @@ impl GigECamera {
     /// let cam = GigECamera::new(None)?; // 使用第一台相机
     /// ```
     pub fn new(id: Option<&str>) -> Result<Self> {
-        ensure_aravis_initialized();
+        ensure_aravis_initialized()?;
 
         let camera = aravis::Camera::new(id)?;
         let cam_id = id.unwrap_or("(first available)");
