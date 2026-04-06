@@ -37,9 +37,9 @@ pub(crate) fn ensure_aravis_initialized() -> Result<&'static aravis::Aravis> {
         }
         Err(error) => Err(error.to_string()),
     });
-    init_result
-        .as_ref()
-        .map_err(|message| CameraError::GenericError(format!("Aravis initialization failed: {message}")))
+    init_result.as_ref().map_err(|message| {
+        CameraError::GenericError(format!("Aravis initialization failed: {message}"))
+    })
 }
 
 /// 相机运行统计信息。
